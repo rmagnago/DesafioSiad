@@ -2,15 +2,7 @@ package com.example.desafio_siad.domain;
 
 import java.util.List;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -27,7 +19,7 @@ public class PessoaJuridica {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "pessoa_juridica_id")
-    private int id;
+    private long id;
 
     @Column(name = "name")
     private String name;
@@ -38,7 +30,6 @@ public class PessoaJuridica {
     @Column(name = "cnpj")
     private String cnpj;
 
-    @OneToMany
-    @JoinTable(name = "pessoa_juridica_produtos", joinColumns = @JoinColumn(name = "pessoa_juridica_id"), inverseJoinColumns = @JoinColumn(name = "produto_id"))
+    @OneToMany(mappedBy = "pessoaJuridica", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Produto> produtos;
 }

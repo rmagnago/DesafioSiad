@@ -8,61 +8,61 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.example.desafio_siad.domain.Endereco;
 import com.example.desafio_siad.domain.PessoaFisica;
-import com.example.desafio_siad.service.PessoaFisicaService;
+import com.example.desafio_siad.repository.PessoaFisicaRepository;
 
 @RestController
 @RequestMapping("/pessoa_fisica")
 public class PessoaFisicaController {
 
     @Autowired
-    private PessoaFisicaService pessoaService;
+    private PessoaFisicaRepository repository;
 
     @GetMapping
-    public ResponseEntity<List<PessoaFisica>> getAllPessoas() {
-        List<PessoaFisica> pessoas = pessoaService.findAllFisicas();
-        return ResponseEntity.ok().body(pessoas);
+    public List<PessoaFisica> findAllFisicas() {
+        return repository.findAll();
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<PessoaFisica> getPessoaById(@PathVariable Integer id) {
-        Optional<PessoaFisica> pessoa = pessoaService.findPessoaFisicaById(id);
-        return pessoa.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+    @GetMapping(value = "/{id}")
+    public Optional<PessoaFisica> findPessoaFisicaById(@PathVariable Long id) {
+        return repository.findById(id);
     }
 
     @PostMapping
-    public ResponseEntity<PessoaFisica> createPessoa(@RequestBody PessoaFisica pessoa) {
-        PessoaFisica createdPessoa = pessoaService.saveFisica(pessoa);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdPessoa);
+    public PessoaFisica saveFisica(@RequestBody PessoaFisica pessoa) {
+        return repository.save(pessoa);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<PessoaFisica> updatePessoa(@PathVariable Integer id,
-            @RequestBody PessoaFisica pessoaDetails) {
-        Optional<PessoaFisica> pessoa = pessoaService.findPessoaFisicaById(id);
-        if (pessoa.isPresent()) {
-            PessoaFisica updatedPessoa = pessoa.get();
-            updatedPessoa.setName(pessoaDetails.getName());
-            updatedPessoa.setDt_nascimento(pessoaDetails.getDt_nascimento());
-            updatedPessoa.setCpf(pessoaDetails.getCpf());
-            updatedPessoa.setVendas(pessoaDetails.getVendas());
-            updatedPessoa.setEnderecos(pessoaDetails.getEnderecos());
+    @PutMapping(value = "/{id}")
+    public ResponseEntity<PessoaFisica> updatePessoa(@PathVariable Long id, @RequestBody PessoaFisica p) {
+        Optional<PessoaFisica> pessoaExistente = repository.findById(id);
 
-            PessoaFisica savedPessoa = pessoaService.saveFisica(updatedPessoa);
-            return ResponseEntity.ok().body(savedPessoa);
+        if (pessoaExistente.isPresent()) {
+            PessoaFisica novaPessoa = pessoaExistente.get();
+            novaPessoa.setName(p.getName());
+            novaPessoa.setDt_nascimento(p.getDt_nascimento());
+            novaPessoa.setCpf(p.getCpf());
+
+            if (p.getEnderecos() != null) {
+                novaPessoa.getEnderecos().clear();
+
+                for (Endereco endereco : p.getEnderecos()) {
+                    endereco.setPessoaFisica(novaPessoa);
+                    novaPessoa.getEnderecos().add(endereco);
+                }
+            }
+
+            repository.save(novaPessoa);
+            return ResponseEntity.ok().body(novaPessoa);
         } else {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletePessoa(@PathVariable Integer id) {
-        Optional<PessoaFisica> pessoa = pessoaService.findPessoaFisicaById(id);
-        if (pessoa.isPresent()) {
-            pessoaService.deleteFisica(id);
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+    @DeleteMapping(value = "/{id}")
+    public void deletePessoa(@PathVariable Long id) {
+        repository.deleteById(id);
     }
+
 }
